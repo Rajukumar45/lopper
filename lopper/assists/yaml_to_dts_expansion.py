@@ -873,19 +873,26 @@ def reserved_memory_expand( tree, reserved_memory_node ):
     RESERVED_MEMORY_BOOLEAN_PROPS = [
         'no-map',
         'reusable',
+        'ranges',
         'linux,cma-default',
         'linux,dma-default',
     ]
 
+    _BOOL_TRUE_VALUES = (1, True, [1], [True])
+
+    def _fixup_boolean_props(node):
+        for prop in RESERVED_MEMORY_BOOLEAN_PROPS:
+            if node.propval(prop) in _BOOL_TRUE_VALUES:
+                node.delete(prop)
+                node + LopperProp(name=prop)
+
+    # Fix boolean properties on the parent reserved-memory node and children
+    _fixup_boolean_props(res_mem_node)
+
     # read start and size. then form 'reg' property for the node.
     # then remove start and size
     for n in pre_existing_res_mem_nodes:
-        # Handle all boolean properties - convert value=1/True to empty property
-        for bool_prop in RESERVED_MEMORY_BOOLEAN_PROPS:
-            prop_val = n.propval(bool_prop)
-            if prop_val in (1, True, [1], [True]):
-                n.delete(bool_prop)
-                n + LopperProp(name=bool_prop)
+        _fixup_boolean_props(n)
 
         if n.propval("reg") != ['']:
             continue
